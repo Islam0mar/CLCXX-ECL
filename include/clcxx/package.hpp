@@ -233,9 +233,9 @@ template <typename T> class ClassWrapper {
 public:
   typedef T type;
 
-  ClassWrapper(Package &pack, jl_datatype_t *dt, jl_datatype_t *ref_dt,
-              jl_datatype_t *alloc_dt)
-      : p_package(mod), m_dt(dt), m_ref_dt(ref_dt), m_alloc_dt(alloc_dt) {}
+  // ClassWrapper(Package &pack, jl_datatype_t *dt, jl_datatype_t *ref_dt,
+  //             jl_datatype_t *alloc_dt)
+  //     : p_package(mod), m_dt(dt), m_ref_dt(ref_dt), m_alloc_dt(alloc_dt) {}
 
   // /// Add a constructor with the given argument types
   // template <typename... ArgsT>
@@ -247,7 +247,7 @@ public:
   /// Define a member function
   template <typename R, typename CT, typename... ArgsT>
   ClassWrapper<T> &method(const std::string &name, R (CT::*f)(ArgsT...)) {
-    p_package.method(
+    p_package.defun(
         name, [f](T &obj, ArgsT... args) -> R { return (obj.*f)(args...); });
     return *this;
   }
@@ -255,7 +255,7 @@ public:
   /// Define a member function, const version
   template <typename R, typename CT, typename... ArgsT>
   ClassWrapper<T> &method(const std::string &name, R (CT::*f)(ArgsT...) const) {
-    p_package.method(name, [f](const T &obj, ArgsT... args) -> R {
+    p_package.defun(name, [f](const T &obj, ArgsT... args) -> R {
       return (obj.*f)(args...);
     });
     return *this;
@@ -264,56 +264,56 @@ public:
   /// Define a "member" function using a lambda
   template <typename LambdaT>
   ClassWrapper<T> &method(const std::string &name, LambdaT &&lambda) {
-    p_package.method(name, std::forward<LambdaT>(lambda));
+    p_package.defun(name, std::forward<LambdaT>(lambda));
     return *this;
   }
 
   /// Call operator overload. For both reference and allocated type to work
   /// around https://github.com/JuliaLang/julia/issues/14919
-  template <typename R, typename CT, typename... ArgsT>
-  ClassWrapper<T> &method(R (CT::*f)(ArgsT...)) {
-    p_package
-        .method("operator()",
-                [f](T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
-        .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
-    p_package
-        .method("operator()",
-                [f](T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
-        .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
-    return *this;
-  }
-  template <typename R, typename CT, typename... ArgsT>
-  ClassWrapper<T> &method(R (CT::*f)(ArgsT...) const) {
-    p_package
-        .method(
-            "operator()",
-            [f](const T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
-        .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
-    p_package
-        .method(
-            "operator()",
-            [f](const T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
-        .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
-    return *this;
-  }
+  // template <typename R, typename CT, typename... ArgsT>
+  // ClassWrapper<T> &method(R (CT::*f)(ArgsT...)) {
+  //   p_package
+  //       .defun("operator()",
+  //               [f](T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
+  //       .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
+  //   p_package
+  //       .defun("operator()",
+  //               [f](T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
+  //       .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
+  //   return *this;
+  // }
+  // template <typename R, typename CT, typename... ArgsT>
+  // ClassWrapper<T> &method(R (CT::*f)(ArgsT...) const) {
+  //   p_package
+  //       .defun(
+  //           "operator()",
+  //           [f](const T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
+  //       .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
+  //   p_package
+  //       .defun(
+  //           "operator()",
+  //           [f](const T &obj, ArgsT... args) -> R { return (obj.*f)(args...); })
+  //       .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
+  //   return *this;
+  // }
 
-  /// Overload operator() using a lambda
-  template <typename LambdaT> ClassWrapper<T> &method(LambdaT &&lambda) {
-    p_package.method("operator()", std::forward<LambdaT>(lambda))
-        .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
-    p_package.method("operator()", std::forward<LambdaT>(lambda))
-        .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
-    return *this;
-  }
+  // /// Overload operator() using a lambda
+  // template <typename LambdaT> ClassWrapper<T> &method(LambdaT &&lambda) {
+  //   p_package.defun("operator()", std::forward<LambdaT>(lambda))
+  //       .set_name(detail::make_fname("CallOpOverload", m_ref_dt));
+  //   p_package.defun("operator()", std::forward<LambdaT>(lambda))
+  //       .set_name(detail::make_fname("CallOpOverload", m_alloc_dt));
+  //   return *this;
+  // }
 
-  template <typename... AppliedTypesT, typename FunctorT>
-  ClassWrapper<T> &apply(FunctorT &&apply_ftor) {
-    static_assert(detail::IsParametric<T>::value,
-                  "Apply can only be called on parametric types");
-    auto dummy = {this->template apply_internal<AppliedTypesT>(
-        std::forward<FunctorT>(apply_ftor))...};
-    return *this;
-  }
+  // template <typename... AppliedTypesT, typename FunctorT>
+  // ClassWrapper<T> &apply(FunctorT &&apply_ftor) {
+  //   static_assert(detail::IsParametric<T>::value,
+  //                 "Apply can only be called on parametric types");
+  //   auto dummy = {this->template apply_internal<AppliedTypesT>(
+  //       std::forward<FunctorT>(apply_ftor))...};
+  //   return *this;
+  // }
 
   /// Apply all possible combinations of the given types (see example)
   template <template <typename...> class TemplateT, typename... TypeLists,
@@ -326,53 +326,53 @@ public:
   // Access to the module
   Package &packule() { return p_package; }
 
-  jl_datatype_t *dt() { return m_dt; }
+  // jl_datatype_t *dt() { return m_dt; }
 
 private:
-  template <typename AppliedT, typename FunctorT>
-  int apply_internal(FunctorT &&apply_ftor) {
-    static_assert(parameter_list<AppliedT>::nb_parameters != 0,
-                  "No parameters found when applying type. Specialize "
-                  "jlcxx::BuildParameterList for your combination of type and "
-                  "non-type parameters.");
-    static_assert(parameter_list<AppliedT>::nb_parameters >=
-                      parameter_list<T>::nb_parameters,
-                  "Parametric type applied to wrong number of parameters.");
-    const bool is_abstract = jl_is_abstracttype(m_dt);
+  // template <typename AppliedT, typename FunctorT>
+  // int apply_internal(FunctorT &&apply_ftor) {
+  //   static_assert(parameter_list<AppliedT>::nb_parameters != 0,
+  //                 "No parameters found when applying type. Specialize "
+  //                 "jlcxx::BuildParameterList for your combination of type and "
+  //                 "non-type parameters.");
+  //   static_assert(parameter_list<AppliedT>::nb_parameters >=
+  //                     parameter_list<T>::nb_parameters,
+  //                 "Parametric type applied to wrong number of parameters.");
+  //   const bool is_abstract = jl_is_abstracttype(m_dt);
 
-    jl_datatype_t *app_dt = (jl_datatype_t *)apply_type(
-        (jl_value_t *)m_dt,
-        parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
-    jl_datatype_t *app_ref_dt = (jl_datatype_t *)apply_type(
-        (jl_value_t *)m_ref_dt,
-        parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
-    jl_datatype_t *app_alloc_dt = (jl_datatype_t *)apply_type(
-        (jl_value_t *)m_alloc_dt,
-        parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
+  //   jl_datatype_t *app_dt = (jl_datatype_t *)apply_type(
+  //       (jl_value_t *)m_dt,
+  //       parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
+  //   jl_datatype_t *app_ref_dt = (jl_datatype_t *)apply_type(
+  //       (jl_value_t *)m_ref_dt,
+  //       parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
+  //   jl_datatype_t *app_alloc_dt = (jl_datatype_t *)apply_type(
+  //       (jl_value_t *)m_alloc_dt,
+  //       parameter_list<AppliedT>()(parameter_list<T>::nb_parameters));
 
-    set_julia_type<AppliedT>(app_dt);
-    p_package.add_default_constructor<AppliedT>(DefaultConstructible<AppliedT>(),
-                                               app_dt);
-    p_package.add_copy_constructor<AppliedT>(CopyConstructible<AppliedT>(),
-                                            app_dt);
-    static_type_mapping<AppliedT>::set_reference_type(app_ref_dt);
-    static_type_mapping<AppliedT>::set_allocated_type(app_alloc_dt);
+  //   set_julia_type<AppliedT>(app_dt);
+  //   p_package.add_default_constructor<AppliedT>(DefaultConstructible<AppliedT>(),
+  //                                              app_dt);
+  //   p_package.add_copy_constructor<AppliedT>(CopyConstructible<AppliedT>(),
+  //                                           app_dt);
+  //   static_type_mapping<AppliedT>::set_reference_type(app_ref_dt);
+  //   static_type_mapping<AppliedT>::set_allocated_type(app_alloc_dt);
 
-    apply_ftor(
-        ClassWrapper<AppliedT>(p_package, app_dt, app_ref_dt, app_alloc_dt));
+  //   apply_ftor(
+  //       ClassWrapper<AppliedT>(p_package, app_dt, app_ref_dt, app_alloc_dt));
 
-    p_package.register_type_pair(app_ref_dt, app_alloc_dt);
+  //   p_package.register_type_pair(app_ref_dt, app_alloc_dt);
 
-    if (!std::is_same<supertype<AppliedT>, AppliedT>::value) {
-      p_package.method("cxxdowncast", DownCast<AppliedT>::apply);
-    }
+  //   if (!std::is_same<supertype<AppliedT>, AppliedT>::value) {
+  //     p_package.defun("cxxdowncast", DownCast<AppliedT>::apply);
+  //   }
 
-    return 0;
-  }
+  //   return 0;
+  // }
   Package &p_package;
-  jl_datatype_t *m_dt;
-  jl_datatype_t *m_ref_dt;
-  jl_datatype_t *m_alloc_dt;
+  //jl_datatype_t *m_dt;
+  //jl_datatype_t *m_ref_dt;
+  //jl_datatype_t *m_alloc_dt;
 };
 
 } // namespace clcxx

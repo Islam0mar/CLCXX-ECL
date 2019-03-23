@@ -1,10 +1,10 @@
-#include "class.hpp"
+#include "clcxx/class.hpp"
 
 
 namespace clcxx {
 
 
-CLCXX_API cl_object ecl_defclass(char[] name, char[] package,
+CLCXX_API cl_object ecl_defclass(char name[], char package[],
                                  cl_object super, cl_object options,
                                  std::queue<cl_object> value_name_type){
   cl_object s = cl_make_array(3,ecl_make_integer(0),ecl_read_from_cstring(":adjustable"),ECL_T);
